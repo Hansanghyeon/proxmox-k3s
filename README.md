@@ -140,6 +140,91 @@ kubectl get nodes
 
 확인가능
 
+## Ingress
+
+`ingress`는 외부에서 쿠버네티스 클러스터에 접근하기 위한 오브젝트를 가리키며 `NGINX` `Traefik`등의 구현이 있습니다. `k3s`는 `Traefik`을 번들로 제공하고 있습니다.
+
+## [WIP] Traefik ingress
+
+### 테스트 애플리케이션 - 에코서버 배포
+
+테스트응 위해 도커 애플리케이션 이미지를 만들기 번거로우니 적절히 에코서버 이미지를 가져와서 deployment를 사용하여 배포합니다.
+
+```bash
+mkdir ~/k3s
+cd ~/k3s
+vi echo-server.yaml
+```
+
+```yaml
+# echo-sever.yml
+
+# 서비스
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-server
+  labels:
+    app: echo-server
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    app: echo-server
+
+# 디플로이먼트
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-server
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: echo-server
+  template:
+    metadata:
+      labels:
+        app: echo-server
+    spec:
+      containers:
+        - name: echo-server
+          image: ealen/echo-server:0.5.2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              cpu: "0.5"
+              memory: "1Gi"
+```
+
+```bash
+kubectl apply -f echo-server.yaml # 서비스와 디플로이먼트를 적용합니다.
+```
+
+```bash
+kubectl get pods # 포드 목록을 나열합니다.
+```
+
+### Traefik을 사용해 외부로 서비스 노출하기
+
+파드는 서비스의 형태로 배포되었지만, 호스트에서 해당 파드로 직접 접근할 수는 없습니다.
+`Ingress`를 사용하여 `ingress Controller`에게 생성한 서비스를 연결해 주어야 외부에서 80 퐅로 접근이 가능합니다.
+
+```bash
+cd ~/k3s
+vi traefik.yaml
+```
+
 ## helm을 이용한 nginx ingress controller 추가
 
 helm `ingress-nginx/ingress-nginx` 차트를 사용하여 nginx ingress controller를 설정. 이를 위해서 repo 추가 repo metadata를 로드한 다음 차트를 설치합니다.
@@ -275,3 +360,4 @@ kubectl get ing
 http://ip/nginx
 
 접속하여 nginx가 재대로 실행되는지 확인
+
