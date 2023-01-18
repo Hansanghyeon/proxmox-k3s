@@ -116,6 +116,14 @@ curl -fsL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --disable tra
 3. 클러스터에 액세스하기 위해서 `k3s.yaml`을 복사한다.<br/>
   `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config`
   
+```bash
+mkdir ~/.kube
+cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+chmod 644 ~/.kube/config
+chown $(id -u):$(id -g) ~/.kube/config
+echo 'export KUBECONFIG="/home/ubuntu/.kube/config"' >> ~/.bashrc
+```
+  
 ### woker 노드에 k3s 설치
 
 ```bash
