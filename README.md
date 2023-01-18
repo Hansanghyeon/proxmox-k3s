@@ -244,7 +244,7 @@ helm repo update
 ### CLI로 예제
 
 ```bash
-helm install nginx-ingress ingress-nginx/ingress-nginx --set controller.publishService.enabled=true
+helm install nginx-ingress ingress-nginx/ingress-nginx --set controller.publishService.enabled=true -n default
 ```
 
 여기에서 `controller.publishService.enabled` 설정은 수신할 서비스 IP주소를 수신 리소스에 게시하도록 컨트롤러에 지시합니다.
@@ -311,8 +311,10 @@ helm search repo ingress-nginx
 #### helm install ingress-nginx
 
 ```bash
-helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
+helm install ingress-nginx ingress-nginx/ingress-nginx -n default
 ```
+
+namespace를 지정해야하는데 수십 수백명이 운영하는 쿠버네티스가 아니라면 하나의 네임스페이스만 사용하자 [참고](https://kubernetes.io/ko/docs/concepts/overview/working-with-objects/namespaces/)
 
 ```bash
 kubectl get pod -n ingress-nginx
