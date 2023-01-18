@@ -144,7 +144,12 @@ kubectl get nodes
 
 `ingress`는 외부에서 쿠버네티스 클러스터에 접근하기 위한 오브젝트를 가리키며 `NGINX` `Traefik`등의 구현이 있습니다. `k3s`는 `Traefik`을 번들로 제공하고 있습니다.
 
-## [WIP] Traefik ingress
+- ✅ traefik ingress
+- nginx ingress
+
+두가지중에 traefik ingress 설정에 대한 자료가 아주 우수해서 traefik ingress로 구성하였습니다.
+
+## Traefik ingress
 
 ### 테스트 애플리케이션 - 에코서버 배포
 
@@ -218,11 +223,276 @@ kubectl get pods # 포드 목록을 나열합니다.
 ### Traefik을 사용해 외부로 서비스 노출하기
 
 파드는 서비스의 형태로 배포되었지만, 호스트에서 해당 파드로 직접 접근할 수는 없습니다.
-`Ingress`를 사용하여 `ingress Controller`에게 생성한 서비스를 연결해 주어야 외부에서 80 퐅로 접근이 가능합니다.
+`Ingress`를 사용하여 `ingress Controller`에게 생성한 서비스를 연결해 주어야 외부에서 80 포트로 접근이 가능합니다.
 
 ```bash
 cd ~/k3s
 vi traefik.yaml
+```
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traefik-routers
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: [YOUR_DOMAIN]
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: echo-server
+                port:
+                  number: 80
+```
+
+### cert-manager와 let's encrypt로 TLS 구현하기
+
+이번에는 `cert-manager`와 `letsencrypt`를 사용하여 TLS 인증서를 적용
+
+[Helm - cert-manager Documentation](https://cert-manager.io/docs/installation/helm/) `helm`을 이용하여 `cert-manager`를 설치합니다.
+
+```bash
+helm repo add jetstack https://charts.jetstack.io
+````
+
+```bash
+helm repo update
+```
+
+```bash
+curl -L -o cert-manager.yml https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
+```
+
+버전이 바뀔수있으니 [Helm - cert-manager Documentation 3-install-customresourcedefinitions](https://cert-manager.io/docs/installation/helm/#3-install-customresourcedefinitions)참고하기
+
+```bash
+k apply -f cert-manager.yml
+```
+
+```bash
+helm install \
+cert-manager jetstack/cert-manager \
+--namespace cert-manager \
+--create-namespace \
+--version v1.11.0
+```
+
+```bash
+k get pods --namespace=cert-manager
+===
+NAME                                       READY   STATUS      RESTARTS   AGE
+cert-manager-cainjector-5c55bb7cb4-schmh   1/1     Running     0          5m16s
+cert-manager-76578c9687-jgqmp              1/1     Running     0          5m16s
+cert-manager-webhook-556f979d7f-7l99s      1/1     Running     0          5m16s
+cert-manager-startupapicheck-xt556         0/1     Completed   0          5m15s
+```
+
+### issuer 등록
+
+인증서를 만들기 전, 발급자를 등록해 주어야 합니다. `letsencrypt`에 대한 `tls-issuer.yaml`를 작성합니다.
+
+```yaml
+# tls-issuer.yml
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: tls-issuer # 마음대로 지정합니다
+  namespace: default
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: [YOUR_EMAIL]
+    privateKeySecretRef:
+      name: tls-key # 마음대로 지정합니다
+    solvers:
+      - selector: {}
+        http01:
+          ingress:
+            class: traefik
+```
+
+`tls-issuer.yaml`를 등록하고 상태를 확인합니다. `Ready: True` 상태로 변경되기 까지 시간이 조금 걸릴 수 있습니다.
+
+```bash
+k create -f tls-issuer.yml
+```
+
+```bash
+k get issuer -o wide
+===
+NAME         READY   STATUS                                                 AGE
+tls-issuer   True    The ACME account was registered with the ACME server   4m31s
+```
+
+### certificate 생성
+
+인증서를 만듭니다.
+
+```yaml
+# tls-cert.yml
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tls-cert
+  namespace: default
+spec:
+  secretName: tls-secret # 마음대로 작성
+  issuerRef:
+    name: tls-issuer # 위에서 지정한 이름
+  commonName: [YOUR_DOMAIN]
+  dnsNames:
+    - [YOUR_DOMAIN]
+    # 서브도메인 등록 가능
+    # - sub.example.com
+```
+
+이제 인증서를 발급합니다.
+1. 더미 인증서 제작
+2. acme 핸드쉐이크
+3. 실제 인증서 발급 및 적용
+4. 더미 인증서 파기
+
+해당 과정을 자동으로 처리해줍니다.
+
+```bash
+k create -f tls-cert.yml
+```
+
+```bash
+k get certificate -o wide
+===
+NAME         READY   SECRET       ISSUER       STATUS                                          AGE
+tls-secret   True    tls-secret   tls-issuer   Certificate is up to date and has not expired   7m57s
+tls-cert     True    tls-secret   tls-issuer   Certificate is up to date and has not expired   6s
+```
+
+마찬가지로 `Ready: True` 사앹가 되기까지 시간이 조금 걸릴 수 있습니다.
+
+### Ingress Controller에 인증서 정보 전달하기
+
+인증서 발급이 성공적으로 처리되었으니 이제 `traefik.yaml`에서 인증서와 비밀 키 정보를전달하면 TLS를 사용할 수 있습니다.
+
+```yaml
+# traefik.yml
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traefik-routers
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: [YOUR_DOMAIN]
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: echo-server
+                port:
+                  number: 80
+  tls:
+    - secretName: tls-secret # tls-cert 에서 지정한 키 이름
+      hosts:
+        - [YOUR_DOMAIN]
+```
+
+`cert-manager` 플러그인이 인증서 파기 1개월 전에 자동갱신 처리해 주니 신경 쓸 필요가 없습니다. `describe` 명령어를 통해 인증서 만료일과 갱신 예정일을 확인해 볼 수 있습니다.
+
+```bash
+k describe certificate tls-cert 
+Name:         tls-cert
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  cert-manager.io/v1
+Kind:         Certificate
+Metadata:
+  Creation Timestamp:  2023-01-18T14:30:56Z
+  Generation:          1
+  Managed Fields:
+    API Version:  cert-manager.io/v1
+    Fields Type:  FieldsV1
+    fieldsV1:
+      f:spec:
+        .:
+        f:commonName:
+        f:dnsNames:
+        f:issuerRef:
+          .:
+          f:name:
+        f:secretName:
+    Manager:      kubectl-create
+    Operation:    Update
+    Time:         2023-01-18T14:30:56Z
+    API Version:  cert-manager.io/v1
+    Fields Type:  FieldsV1
+    fieldsV1:
+      f:status:
+        f:revision:
+    Manager:      cert-manager-certificates-issuing
+    Operation:    Update
+    Subresource:  status
+    Time:         2023-01-18T14:31:22Z
+    API Version:  cert-manager.io/v1
+    Fields Type:  FieldsV1
+    fieldsV1:
+      f:status:
+        .:
+        f:conditions:
+          .:
+          k:{"type":"Ready"}:
+            .:
+            f:lastTransitionTime:
+            f:message:
+            f:observedGeneration:
+            f:reason:
+            f:status:
+            f:type:
+        f:notAfter:
+        f:notBefore:
+        f:renewalTime:
+    Manager:         cert-manager-certificates-readiness
+    Operation:       Update
+    Subresource:     status
+    Time:            2023-01-18T14:31:22Z
+  Resource Version:  23295
+  UID:               24262cb8-631f-4506-ade0-2abba2023f61
+Spec:
+  Common Name:  4t.gg
+  Dns Names:
+    4t.gg
+  Issuer Ref:
+    Name:       tls-issuer
+  Secret Name:  tls-secret
+Status:
+  Conditions:
+    Last Transition Time:  2023-01-18T14:31:22Z
+    Message:               Certificate is up to date and has not expired
+    Observed Generation:   1
+    Reason:                Ready
+    Status:                True
+    Type:                  Ready
+  Not After:               2023-04-18T13:31:20Z
+  Not Before:              2023-01-18T13:31:21Z
+  Renewal Time:            2023-03-19T13:31:20Z
+  Revision:                1
+Events:
+  Type    Reason     Age    From                                       Message
+  ----    ------     ----   ----                                       -------
+  Normal  Issuing    7m1s   cert-manager-certificates-trigger          Issuing certificate as Secret does not exist
+  Normal  Generated  7m1s   cert-manager-certificates-key-manager      Stored new private key in temporary Secret resource "tls-cert-sb27z"
+  Normal  Requested  7m1s   cert-manager-certificates-request-manager  Created new CertificateRequest resource "tls-cert-twd5d"
+  Normal  Issuing    6m35s  cert-manager-certificates-issuing          The certificate has been successfully issued
 ```
 
 ## helm을 이용한 nginx ingress controller 추가
