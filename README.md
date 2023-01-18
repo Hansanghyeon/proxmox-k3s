@@ -153,7 +153,7 @@ kubectl get nodes
 
 두가지중에 traefik ingress 설정에 대한 자료가 아주 우수해서 traefik ingress로 구성하였습니다.
 
-## Traefik ingress
+## Traefik ingress (helm)
 
 ### 테스트 애플리케이션 - 에코서버 배포
 
@@ -499,7 +499,7 @@ Events:
   Normal  Issuing    6m35s  cert-manager-certificates-issuing          The certificate has been successfully issued
 ```
 
-## helm을 이용한 nginx ingress controller 추가
+## nginx ingress (helm)
 
 helm `ingress-nginx/ingress-nginx` 차트를 사용하여 nginx ingress controller를 설정. 이를 위해서 repo 추가 repo metadata를 로드한 다음 차트를 설치합니다.
 
