@@ -63,7 +63,7 @@ Control 노드와 동일하게 생성하고 Hostnmae을 `worker-[id].k8s`로 변
 
 #### 운영체제에서 필요한 프로그램 설치
 
-```
+```bash
 apt-get install neovim git curl
 ```
 
@@ -105,7 +105,7 @@ apt-get install neovim git curl
 
 ### Control Plane에 k3s 설치
 
-```sh
+```bash
 curl -fsL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --disable traefik --node-name control.k8s
 ```
 
@@ -118,7 +118,7 @@ curl -fsL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --disable tra
   
 ### woker 노드에 k3s 설치
 
-```
+```bash
 curl -fsL https://get.k3s.io | K3S_URL=https://[control-node-ip]:6443 K3S_TOKEN=[node-token] sh -s - --node-name worker-1.k8s
 ```
 
@@ -126,7 +126,7 @@ curl -fsL https://get.k3s.io | K3S_URL=https://[control-node-ip]:6443 K3S_TOKEN=
 
 control 노드에서
 
-```
+```bash
 kubectl get nodes
 ```
 
@@ -140,17 +140,17 @@ helm의 stable repo가 업데이트를 중단했고, k8s는 빠르게 업데이�
 
 ### helm repo 추가
 
-```
+```bash
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 ```
 
-```
+```bash
 helm repo update
 ```
 
 ### CLI로 예제
 
-```
+```bash
 helm install nginx-ingress ingress-nginx/ingress-nginx --set controller.publishService.enabled=true
 ```
 
@@ -164,7 +164,7 @@ control plane의 ip로 접속하면 404 not found nginx를 볼 수 있습니다.
 
 #### nginx pod와 service 생성
 
-```
+```yaml
 # mynginx.yaml
 
 apiVersion: v1
@@ -195,33 +195,33 @@ spec:
 
 Service의 Type은 ClusterIP로 설정한다.
 
-```
+```bash
 kubectl apply -f mynginx.yaml
 ```
 
 #### ingress namespace 생성
 
-```
+```bash
 kubectl create ns ingress-nginx
 ```
 
 #### helm repo update & search
 
-```
+```bash
 helm repo update
 ```
 
-```
+```bash
 helm search repo ingress-nginx
 ```
 
 #### helm install ingress-nginx
 
-```
+```bash
 helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
 ```
 
-```
+```bash
 kubectl get pod -n ingress-nginx
 kubectl get svc -n ingress-nginx
 ```
@@ -254,11 +254,11 @@ spec:
               number: 80
 ```
 
-```
+```bash
 kubectl apply -f mynginx-ingress.yaml
 ```
 
-```
+```bash
 kubectl get ing
 ```
 
