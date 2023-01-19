@@ -373,11 +373,10 @@ k create -f tls-cert.yml
 k get certificate -o wide
 ===
 NAME         READY   SECRET       ISSUER       STATUS                                          AGE
-tls-secret   True    tls-secret   tls-issuer   Certificate is up to date and has not expired   7m57s
 tls-cert     True    tls-secret   tls-issuer   Certificate is up to date and has not expired   6s
 ```
 
-마찬가지로 `Ready: True` 사앹가 되기까지 시간이 조금 걸릴 수 있습니다.
+마찬가지로 `Ready: True` 상태가 되기까지 시간이 조금 걸릴 수 있습니다.
 
 ### Ingress Controller에 인증서 정보 전달하기
 
