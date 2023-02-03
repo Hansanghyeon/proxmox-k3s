@@ -30,7 +30,7 @@ LXC컨테이너는 경량화된 리눅스로 템플릿이 별도로 있습니다
 <img width="1462" alt="스크린샷 2023-02-04 오전 12 19 14" src="https://user-images.githubusercontent.com/42893446/216640407-b06258eb-3a1b-4c08-b84b-2c6c4d705be6.png">
 <img width="1462" alt="스크린샷 2023-02-04 오전 12 21 05" src="https://user-images.githubusercontent.com/42893446/216640439-79a1af3b-130e-4dc2-9b24-693ed7d2a8b0.png">
 
-LXC 컨테이너는 보안상 권한이 없는 컨테이너로 만드렁주셔야 안전합니다.
+LXC 컨테이너는 보안상 권한이 없는 컨테이너로 만들어주셔야 안전합니다.
 
 ### Control Plane LXC컨테이너 생성
 
