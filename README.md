@@ -20,6 +20,18 @@ k3s의 노드가될 LXC 컨테이너 생성
 
 컨테이너에서 사용할 SSH Public Key를 생성한다.
 
+### Ubuntu 22 템플릿 추가하기
+
+먼저 사용할 Ubuntu 22.04 템플릿을 추가해줍니다.
+LXC컨테이너는 경량화된 리눅스로 템플릿이 별도로 있습니다.
+
+사용하고있는 스토리지의 CT 템플릿 > 템플릿으로 이동
+
+<img width="1462" alt="스크린샷 2023-02-04 오전 12 19 14" src="https://user-images.githubusercontent.com/42893446/216640407-b06258eb-3a1b-4c08-b84b-2c6c4d705be6.png">
+<img width="1462" alt="스크린샷 2023-02-04 오전 12 21 05" src="https://user-images.githubusercontent.com/42893446/216640439-79a1af3b-130e-4dc2-9b24-693ed7d2a8b0.png">
+
+LXC 컨테이너는 보안상 권한이 없는 컨테이너로 만드렁주셔야 안전합니다.
+
 ### Control Plane LXC컨테이너 생성
 
 <kbd>Create CT</kbd> 클릭해서 CT 생성
@@ -40,8 +52,6 @@ Control 노드와 동일하게 생성하고 Hostnmae을 `worker-[id].k8s`로 변
 
 ### 컨테이너 권한부여
 
-이 단계에서는 LXC 컨테이너를 중지해야합니다.
-
 1. pve의 shell or SSH로 연결한다.
 2. `vim /etc/pve/lxc/300.conf`
 3. 다음을 추가합니다
@@ -55,7 +65,7 @@ Control 노드와 동일하게 생성하고 Hostnmae을 `worker-[id].k8s`로 변
 5. 그런다음 woker 노드에 대해서 동일한 작업을 반복합니다.
   `vim /etc/pve/lxc/[CT_ID].conf`
   
-해당 설정을 LXC 컨테이너를 시작하여 설정을 반영합니다.
+해당 설정을 LXC 컨테이너를 재부팅하여 설정을 반영합니다.
 
 1. pve의 shell or SSH로 연결한다.
 2. `pct push 300 /boot/config-$(uname -r) /boot/config-$(uname -r)`
@@ -64,6 +74,9 @@ Control 노드와 동일하게 생성하고 Hostnmae을 `worker-[id].k8s`로 변
 ### 각 LXC 컨테이너에서
 
 #### 운영체제에서 필요한 프로그램 설치
+
+
+LXC는 경량화다보니 기본적인 명령어들이 없는 경우가 있습니다. 필요한 프로그램들을 설치합니다.
 
 ```bash
 apt-get install neovim git curl
