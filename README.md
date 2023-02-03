@@ -46,7 +46,7 @@ LXC 컨테이너는 보안상 권한이 없는 컨테이너로 만드렁주셔�
 <img width="728" alt="스크린샷 2023-01-18 오후 5 08 14" src="https://user-images.githubusercontent.com/42893446/213117234-f86c15d6-4f25-423b-af00-b8ae5e1ea0ac.png">
 <img width="724" alt="스크린샷 2023-01-18 오후 5 08 29" src="https://user-images.githubusercontent.com/42893446/213117288-e7a54ee9-c053-4e7c-b4be-bc833148dd6b.png">
 
-### Worker 노트 LXC 컨테이너 생성
+### Worker 노드 LXC 컨테이너 생성
 
 Control 노드와 동일하게 생성하고 Hostnmae을 `worker-[id].k8s`로 변경해서 생성한다.
 
