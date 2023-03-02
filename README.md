@@ -96,27 +96,39 @@ apt-get install neovim git curl
   
 #### create `conf-kmsg.service`
 
-1. `vim /etc/systemd/system/conf-kmsg.service`
-2. 내용 추가
-  ```
-  [Unit]
-  Description=Make sure /dev/kmsg exists
+```bash
+vim /etc/systemd/system/conf-kmsg.service
+```
 
-  [Service]
-  Type=simple
-  RemainAfterExit=yes
-  ExecStart=/usr/local/bin/conf-kmsg.sh
-  TimeoutStartSec=0
+내용 추가
 
-  [Install]
-  WantedBy=default.target
-  ```
+```
+[Unit]
+Description=Make sure /dev/kmsg exists
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/conf-kmsg.sh
+TimeoutStartSec=0
+
+[Install]
+WantedBy=default.target
+```
   
 #### service 실행
 
-1. `chmod +x /usr/local/bin/conf-kmsg.sh`
-2. `systemctl daemon-reload`
-3. `systemctl enable --now conf-kmsg`
+```bash
+chmod +x /usr/local/bin/conf-kmsg.sh
+```
+
+```bash
+systemctl daemon-reload
+```
+
+```bash
+systemctl enable --now conf-kmsg
+```
 
 ### Control Plane에 k3s 설치
 
@@ -124,12 +136,23 @@ apt-get install neovim git curl
 curl -fsL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --disable traefik --node-name control.k8s
 ```
 
-1. control plane의 ip 주소 가져오기<br/>
-  `hostname -I`
-2. k3s woker node 등록 토큰을 표시<br/>
-  `cat /var/lib/rancher/k3s/server/node-token`
-3. 클러스터에 액세스하기 위해서 `k3s.yaml`을 복사한다.<br/>
-  `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config`
+1. control plane의 ip 주소 가져오기
+
+```bash
+hostname -I
+```
+
+2. k3s woker node 등록 토큰을 표시
+
+```bash
+cat /var/lib/rancher/k3s/server/node-token
+```
+
+3. 클러스터에 액세스하기 위해서 `k3s.yaml`을 복사한다.
+
+```bash
+cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+```
   
 ```bash
 mkdir ~/.kube
@@ -246,6 +269,7 @@ kubectl get pods # 포드 목록을 나열합니다.
 cd ~/k3s
 vi traefik.yaml
 ```
+
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -288,7 +312,7 @@ curl -L -o cert-manager.yml https://github.com/cert-manager/cert-manager/release
 버전이 바뀔수있으니 [Helm - cert-manager Documentation 3-install-customresourcedefinitions](https://cert-manager.io/docs/installation/helm/#3-install-customresourcedefinitions)참고하기
 
 ```bash
-k apply -f cert-manager.yml
+kubectl apply -f cert-manager.yml
 ```
 
 ```bash
@@ -300,7 +324,7 @@ cert-manager jetstack/cert-manager \
 ```
 
 ```bash
-k get pods --namespace=cert-manager
+kubectl get pods --namespace=cert-manager
 ===
 NAME                                       READY   STATUS      RESTARTS   AGE
 cert-manager-cainjector-5c55bb7cb4-schmh   1/1     Running     0          5m16s
@@ -379,11 +403,11 @@ spec:
 해당 과정을 자동으로 처리해줍니다.
 
 ```bash
-k create -f tls-cert.yml
+kubectl create -f tls-cert.yml
 ```
 
 ```bash
-k get certificate -o wide
+kubectl get certificate -o wide
 ===
 NAME         READY   SECRET       ISSUER       STATUS                                          AGE
 tls-cert     True    tls-secret   tls-issuer   Certificate is up to date and has not expired   6s
@@ -425,7 +449,7 @@ spec:
 `cert-manager` 플러그인이 인증서 파기 1개월 전에 자동갱신 처리해 주니 신경 쓸 필요가 없습니다. `describe` 명령어를 통해 인증서 만료일과 갱신 예정일을 확인해 볼 수 있습니다.
 
 ```bash
-k describe certificate tls-cert 
+kubectl describe certificate tls-cert 
 Name:         tls-cert
 Namespace:    default
 Labels:       <none>
