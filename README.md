@@ -84,16 +84,22 @@ apt-get install neovim git curl
 
 #### create `conf-kmsg.sh`
 
-1. `vim /usr/local/bin/conf-kmsg.sh`
+1. conf-kmsg.sh 추가
+
+```bash
+vim /usr/local/bin/conf-kmsg.sh
+```
+
 2. 내용 추가
-  ```
-  #!/bin/sh -e
-  if [ ! -e /dev/kmsg ]; then
-    ln -s /dev/console /dev/kmsg
-  fi
-  mount --make-rshared /
-  ```
   
+```
+#!/bin/sh -e
+if [ ! -e /dev/kmsg ]; then
+  ln -s /dev/console /dev/kmsg
+fi
+mount --make-rshared /
+```
+
 #### create `conf-kmsg.service`
 
 ```bash
